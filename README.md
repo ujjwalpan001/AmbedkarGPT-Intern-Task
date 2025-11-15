@@ -308,9 +308,7 @@ AmbedkarGPT-Intern-Task/
 ├── requirements.txt         # Python dependencies
 ├── speech.txt              # Source document
 ├── README.md               # This file
-└── chroma_db_prod/         # Generated vector database (after first run)
-    ├── chroma.sqlite3      # SQLite database file
-    └── [collection_id]/    # Vector storage
+
 ```
 
 ### Key Components
@@ -373,18 +371,6 @@ This implementation prioritizes:
 5. **Production readiness:** Comprehensive error handling and graceful degradation
 6. **Resource efficiency:** Optimized for CPU-only environments without requiring GPU acceleration
 
-## Potential Improvements
-
-Given additional time, the following enhancements could be implemented:
-
-1. **Hybrid Search:** Combine semantic similarity with keyword-based BM25 scoring for improved retrieval
-2. **Query Expansion:** Automatically generate related queries to capture more relevant context
-3. **Reranking:** Add a cross-encoder reranking stage to improve retrieval precision
-4. **Caching:** Implement query result caching for frequently asked questions
-5. **Logging:** Add structured logging for debugging and monitoring
-6. **Web Interface:** Build a Flask or FastAPI web UI for easier accessibility
-7. **Batch Processing:** Support processing multiple questions from a file
-8. **Evaluation Metrics:** Implement automated testing with ground truth Q&A pairs
 
 ## Conclusion
 
