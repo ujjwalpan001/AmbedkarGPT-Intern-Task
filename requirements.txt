@@ -1,5 +1,22 @@
-langchain
-langchain-community
-langchain-huggingface
-chromadb
-sentence-transformers
+# LangChain core
+langchain==0.1.20
+langchain-core==0.1.52
+langchain-community==0.0.38
+langchain-text-splitters==0.0.1
+
+# Vector store
+chromadb==0.4.24
+posthog>=3.0.0
+
+# Embeddings
+sentence-transformers==2.5.1
+transformers==4.38.2
+
+# Ollama
+ollama==0.1.7
+
+# Dependencies
+torch>=2.0.0
+numpy>=1.24.0
+tiktoken>=0.5.0
+pydantic>=2.0.0
