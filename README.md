@@ -1,25 +1,31 @@
-```markdown
 # AmbedkarGPT - Retrieval-Augmented Generation Q&A System
+
+```
+═══════════════════════════════════════════════════════════════════
+    Intelligent Question-Answering System using RAG Architecture
+    Built with LangChain, ChromaDB, and Local LLM (Ollama)
+═══════════════════════════════════════════════════════════════════
+```
 
 ## Project Overview
 
 
 
+The system demonstrates a practical implementation of RAG technology, combining vector search with local language models to provide accurate, context-grounded answers. Unlike traditional chatbots that might hallucinate information, this system strictly answers based only on the provided source text.
+
 ## Technical Architecture
 
 ### Core Technologies
 
-**Programming Language:** Python 3.8+
-
-**Framework:** LangChain with LCEL (LangChain Expression Language) for modern chain composition
-
-**Large Language Model:** Ollama running the Mistral model locally
-
-**Vector Database:** ChromaDB with persistent storage
-
-**Embedding Model:** sentence-transformers/all-MiniLM-L6-v2 from HuggingFace
-
-**Additional Libraries:** PyTorch for model inference, Pydantic for data validation
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Language** | Python 3.8+ | Core programming environment |
+| **Framework** | LangChain with LCEL | RAG pipeline orchestration |
+| **LLM** | Ollama (Mistral) | Local language model inference |
+| **Vector Store** | ChromaDB | Persistent embedding storage |
+| **Embeddings** | all-MiniLM-L6-v2 | Semantic text vectorization |
+| **ML Backend** | PyTorch | Model inference engine |
+| **Validation** | Pydantic | Data schema validation |
 
 ### System Design Decisions
 
@@ -27,7 +33,16 @@ The implementation follows several key design principles that were carefully cho
 
 #### 1. Retrieval-Augmented Generation (RAG) Approach
 
-Rather than relying solely on the language model's pre-trained knowledge, this system implements RAG to ground all responses in the actual source text. This approach provides several advantages:
+Rather than relying solely on the language model's pre-trained knowledge, this system implements RAG to ground all responses in the actual source text.
+
+```
+User Query → Vectorize → Retrieve Top-K Chunks → LLM Generation → Answer + Sources
+                ↓              ↑
+           Embedding      Vector Database
+             Model          (ChromaDB)
+```
+
+This approach provides several advantages:
 
 - Prevents hallucination by constraining responses to retrieved context
 - Enables citation of source material for verification
@@ -38,22 +53,24 @@ Rather than relying solely on the language model's pre-trained knowledge, this s
 
 The text processing pipeline uses a RecursiveCharacterTextSplitter with carefully tuned parameters:
 
-- **Chunk Size:** 500 characters - This size balances context preservation with retrieval precision. Smaller chunks would lose context, while larger chunks would reduce retrieval accuracy.
-
-- **Chunk Overlap:** 50 characters - Ensures important information at chunk boundaries is not lost, improving answer completeness.
-
-- **Separator Hierarchy:** [". ", "\n\n", "\n", " ", ""] - This ordering prioritizes natural text boundaries like sentences and paragraphs, maintaining semantic coherence within chunks.
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| **Chunk Size** | 500 chars | Balances context preservation with retrieval precision |
+| **Chunk Overlap** | 50 chars | Prevents information loss at chunk boundaries |
+| **Separators** | `[". ", "\n\n", "\n", " "]` | Prioritizes natural text boundaries for semantic coherence |
 
 #### 3. Embedding and Retrieval Configuration
 
 The embedding model (all-MiniLM-L6-v2) was selected for its balance of performance and resource efficiency:
 
-- Produces 384-dimensional vectors
-- Normalized embeddings for consistent similarity scoring
-- CPU-optimized for deployment flexibility
-- Proven performance on semantic similarity tasks
+| Specification | Value | Benefit |
+|--------------|-------|---------|
+| **Vector Dimensions** | 384 | Optimal balance of accuracy and speed |
+| **Normalization** | L2-normalized | Consistent similarity scoring |
+| **Hardware** | CPU-optimized | Flexible deployment without GPU |
+| **Retrieval Count** | k=4 | Sufficient context without overwhelming LLM |
 
-Retrieval uses similarity search with k=4, retrieving the four most relevant chunks for each query. This number was chosen to provide sufficient context without overwhelming the language model's context window.
+The retrieval count of 4 was chosen to provide sufficient context for comprehensive answers without overwhelming the language model's context window.
 
 #### 4. Vector Store Implementation
 
@@ -108,29 +125,49 @@ The codebase follows software engineering best practices:
 
 ### Prerequisites
 
+```
+Required: Python 3.8+ | Ollama | Mistral Model
+```
+
 Before beginning installation, ensure your system meets these requirements:
 
-1. **Python Version:** Python 3.8 or higher installed on your system. You can verify this by running:
-   ```bash
-   python --version
-   ```
+**1. Python Version**
 
-2. **Ollama Installation:** Download and install Ollama from [ollama.ai](https://ollama.ai/). Ollama provides a local inference server for running large language models.
+Python 3.8 or higher must be installed on your system. Verify with:
 
-3. **Mistral Model:** After installing Ollama, pull the Mistral model:
-   ```bash
-   ollama pull mistral
-   ```
-   This downloads the model weights locally. The first download may take several minutes depending on your internet connection.
+```bash
+python --version
+```
 
-4. **Verify Ollama is Running:** Start the Ollama service. It typically runs on localhost:11434. You can test connectivity:
-   ```bash
-   curl http://localhost:11434/api/tags
-   ```
+**2. Ollama Installation**
+
+Download and install Ollama from [ollama.ai](https://ollama.ai/). Ollama provides a local inference server for running large language models.
+
+**3. Mistral Model**
+
+After installing Ollama, pull the Mistral model:
+
+```bash
+ollama pull mistral
+```
+
+This downloads the model weights locally. The first download may take several minutes depending on your internet connection.
+
+**4. Verify Ollama Service**
+
+Start the Ollama service (runs on localhost:11434). Test connectivity:
+
+```bash
+curl http://localhost:11434/api/tags
+```
 
 ### Project Installation
 
-1. **Clone the Repository:**
+```
+Steps: Clone → Virtual Env → Install Dependencies → Verify Files
+```
+
+**1. Clone the Repository:**
    ```bash
    git clone <repository-url>
    cd AmbedkarGPT-Intern-Task
@@ -183,29 +220,40 @@ python main.py
 
 The system will perform the following initialization sequence:
 
-1. **Environment Validation:** Checks Python version compatibility and imports required libraries
+```
+[1] Environment Validation
+    └─ Check Python version & imports
 
-2. **Ollama Connection Test:** Verifies that the Ollama server is accessible and responds to requests
+[2] Ollama Connection Test
+    └─ Verify server accessibility
 
-3. **Embedding Model Loading:** Initializes the sentence-transformer model for text vectorization
+[3] Embedding Model Loading
+    └─ Initialize sentence-transformer
 
-4. **Document Processing:** 
-   - Reads speech.txt file
-   - Splits text into semantic chunks
-   - Generates embeddings for each chunk
+[4] Document Processing
+    ├─ Read speech.txt
+    ├─ Split into chunks (500 chars, 50 overlap)
+    └─ Generate embeddings
 
-5. **Vector Store Creation:** 
-   - Creates the chroma_db_prod directory
-   - Stores chunk embeddings in ChromaDB
-   - Persists database to disk
+[5] Vector Store Creation
+    ├─ Create chroma_db_prod/
+    ├─ Store embeddings in ChromaDB
+    └─ Persist to disk
 
-6. **QA Chain Initialization:** Sets up the retrieval and generation pipeline
+[6] QA Chain Initialization
+    └─ Setup retrieval pipeline
 
-This first run may take 2-3 minutes depending on your hardware as models are loaded and embeddings are computed.
+Duration: ~2-3 minutes (hardware dependent)
+```
 
 ### Subsequent Runs
 
-On subsequent executions, the system detects the existing vector database and loads it directly, bypassing the document processing stage. This reduces startup time to approximately 10-20 seconds.
+| Run Type | Startup Time | Operations |
+|----------|-------------|------------|
+| First Run | 2-3 minutes | Full initialization + embedding generation |
+| Subsequent | 10-20 seconds | Load existing vector database |
+
+On subsequent executions, the system detects the existing vector database and loads it directly, bypassing the document processing stage.
 
 ### Asking Questions
 
@@ -227,28 +275,28 @@ Enter your question and press Enter. The system will:
 
 ### Example Interactions
 
-**Question within scope:**
+**Example 1: Question within scope**
+
 ```
 > What is the real remedy?
 
-A: According to the text, the real remedy is to destroy the caste system...
+Answer: According to the text, the real remedy is to destroy the caste 
+system and promote social equality...
 
-Sources:
-  1. ...the real remedy is to destroy the caste system. Nothing else will serve...
+Source excerpts:
+  1. ...the real remedy is to destroy the caste system...
+  2. ...nothing else will serve as an effective solution...
 ```
 
-**Question outside scope:**
+**Example 2: Question outside scope**
+
 ```
 > What are Dr. Ambedkar's views on modern technology?
 
-A: I cannot find this information in the provided text.
+Answer: I cannot find this information in the provided text.
 ```
 
-### Exiting the Application
-
-To terminate the program, type any of: `exit`, `quit`, or `q`
-
-Alternatively, press Ctrl+C for immediate termination.
+**Exit Commands:** Type `exit`, `quit`, or `q` to terminate | Press `Ctrl+C` for immediate shutdown
 
 ## Technical Implementation Details
 
@@ -265,44 +313,53 @@ AmbedkarGPT-Intern-Task/
     └── [collection_id]/    # Vector storage
 ```
 
-### Key Components Explanation
+### Key Components
 
-**FilteredStderr Class:**
-Implements a custom standard error stream wrapper that filters out ChromaDB telemetry warnings. This provides clean output while preserving important error messages.
+| Component | Purpose | Key Feature |
+|-----------|---------|-------------|
+| **StderrFilter** | Error stream wrapper | Filters ChromaDB telemetry warnings |
+| **AppConfig** | Configuration hub | Centralizes all system parameters |
+| **initialize_embeddings()** | Embedding factory | Creates HuggingFace model instance |
+| **verify_ollama_connection()** | Health check | Validates Ollama server availability |
+| **process_document()** | Document processor | Loads and chunks text with UTF-8 encoding |
+| **get_chroma_client()** | Database factory | Creates ChromaDB client with telemetry disabled |
+| **initialize_vector_store()** | Vector DB manager | Creates or loads existing vector database |
+| **build_qa_pipeline()** | LCEL chain builder | Constructs retrieval → prompt → LLM pipeline |
 
-**Config Class:**
-Centralizes all configuration parameters including file paths, model names, chunking parameters, and retrieval settings. Modifying system behavior only requires editing this class.
+**Component Interactions:**
 
-**get_embedding_model() Function:**
-Factory function for creating the HuggingFace embedding model with consistent configuration. Implements the DRY (Don't Repeat Yourself) principle by centralizing model instantiation.
-
-**check_ollama_connection() Function:**
-Performs a health check on the Ollama server before processing begins. Prevents cryptic errors by validating connectivity upfront.
-
-**load_and_split() Function:**
-Handles document loading with UTF-8 encoding and implements the chunking strategy. Returns None on failure to enable proper error handling.
-
-**create_vector_store() Function:**
-Manually instantiates ChromaDB PersistentClient with explicit settings to ensure telemetry is disabled and persistence is configured correctly. Creates the vector store and populates it with document embeddings.
-
-**load_existing_store() Function:**
-Reconnects to an existing ChromaDB database using the same client configuration as creation. Enables fast restarts by skipping document processing.
-
-**setup_qa_chain() Function:**
-Constructs the LCEL chain by combining the retriever, prompt template, and LLM. Uses create_retrieval_chain for proper document passing and create_stuff_documents_chain for context formatting.
+```
+[main] → [verify_ollama_connection] → [initialize_embeddings]
+   ↓
+[process_document] → [get_chroma_client] → [initialize_vector_store]
+   ↓
+[build_qa_pipeline] → Interactive Q&A Loop
+```
 
 **main() Function:**
 Orchestrates the entire application flow with proper error handling at each stage. Implements the interactive loop for user queries.
 
-### Configuration Parameters
+### Configuration Tuning
 
-You can modify these parameters in the Config class to tune system behavior:
+**Available Parameters in AppConfig:**
 
-- **CHUNK_SIZE:** Increase for more context per chunk, decrease for more precise retrieval
-- **CHUNK_OVERLAP:** Increase to reduce boundary effects, decrease to reduce redundancy
-- **SEARCH_K:** Number of chunks retrieved per query (higher = more context but slower)
-- **LLM_MODEL:** Change to use different Ollama models (llama2, codellama, etc.)
-- **EMBEDDING_MODEL:** Switch to different sentence-transformers models for different language support
+| Parameter | Default | Effect of Increase | Effect of Decrease |
+|-----------|---------|-------------------|-------------------|
+| `CHUNK_SIZE` | 500 | More context per chunk | More precise retrieval |
+| `CHUNK_OVERLAP` | 50 | Reduces boundary effects | Reduces redundancy |
+| `RETRIEVAL_COUNT` | 4 | More context (slower) | Faster but less context |
+
+**Model Selection:**
+
+```python
+# Change LLM model (in build_qa_pipeline function)
+llm = ChatOllama(model="llama2")  # or "codellama", "mixtral", etc.
+
+# Change embedding model (in initialize_embeddings function)
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+)
+```
 
 
 ## Design Rationale Summary

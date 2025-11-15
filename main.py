@@ -15,7 +15,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 
 class StderrFilter:
-    """Filters ChromaDB telemetry warnings from stderr output"""
+    # Filters ChromaDB telemetry warnings from stderr output
     def __init__(self, original_stream):
         self.stream = original_stream
     
@@ -44,7 +44,7 @@ except ImportError:
 
 
 class AppConfig:
-    """Application configuration and constants"""
+    # Application configuration and constants
     SOURCE_FILE = "speech.txt"
     DB_PATH = "./chroma_db_prod"
     EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
@@ -56,7 +56,7 @@ class AppConfig:
 
 
 class Colors:
-    """ANSI color codes for terminal output"""
+    # ANSI color codes for terminal output
     BLUE = '\033[94m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
@@ -66,7 +66,7 @@ class Colors:
 
 
 def initialize_embeddings():
-    """Initialize and return the HuggingFace embedding model"""
+    # Initialize and return the HuggingFace embedding model
     return HuggingFaceEmbeddings(
         model_name=AppConfig.EMBEDDING_MODEL,
         model_kwargs={'device': 'cpu'},
@@ -75,7 +75,7 @@ def initialize_embeddings():
 
 
 def verify_ollama_connection(language_model):
-    """Test connection to Ollama server"""
+    # Test connection to Ollama server
     print(f"{Colors.YELLOW}Verifying Ollama connection ({AppConfig.LLM_NAME})...{Colors.RESET}")
     try:
         language_model.invoke("test")
@@ -89,7 +89,7 @@ def verify_ollama_connection(language_model):
 
 
 def process_document(file_path):
-    """Load document from file and split into chunks"""
+    # Load document from file and split into chunks
     if not os.path.exists(file_path):
         print(f"{Colors.RED}File not found: {file_path}{Colors.RESET}")
         return None
@@ -113,7 +113,7 @@ def process_document(file_path):
 
 
 def get_chroma_client():
-    """Create and return ChromaDB persistent client with telemetry disabled"""
+    # Create and return ChromaDB persistent client with telemetry disabled
     db_settings = Settings(
         anonymized_telemetry=False,
         allow_reset=True,
@@ -123,7 +123,7 @@ def get_chroma_client():
 
 
 def initialize_vector_store(document_chunks, embedding_model, is_new=True):
-    """Create or load vector store with document embeddings"""
+    # Create or load vector store with document embeddings
     action = "Creating" if is_new else "Loading"
     print(f"{Colors.YELLOW}{action} vector store...{Colors.RESET}")
     
@@ -144,7 +144,7 @@ def initialize_vector_store(document_chunks, embedding_model, is_new=True):
 
 
 def build_qa_pipeline(vector_store, language_model):
-    """Construct the retrieval-augmented generation chain"""
+    # Construct the retrieval-augmented generation chain
     print(f"{Colors.YELLOW}Building QA pipeline...{Colors.RESET}")
     
     system_prompt = """You are a helpful assistant answering questions only from Dr. B.R. Ambedkar's speech.
@@ -174,7 +174,7 @@ Answer:"""
 
 
 def main():
-    """Main application entry point"""
+    # Main application entry point
     print(f"\n{Colors.BLUE}{Colors.BOLD}{'='*70}")
     print("              AmbedkarGPT - Speech Q&A System")
     print(f"{'='*70}{Colors.RESET}\n")
