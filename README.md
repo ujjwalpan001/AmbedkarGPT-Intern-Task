@@ -1,181 +1,73 @@
-# AmbedkarGPT - Retrieval-Augmented Generation Q&A System
+# AmbedkarGPT - Q&A System
 
-```
-═══════════════════════════════════════════════════════════════════
-    Intelligent Question-Answering System using RAG Architecture
-    Built with LangChain, ChromaDB, and Local LLM (Ollama)
-═══════════════════════════════════════════════════════════════════
-```
+A question-answering system built for Dr. B.R. Ambedkar's speeches using Retrieval-Augmented Generation (RAG). The system answers questions based only on the provided text, preventing the LLM from making things up.
 
-## Project Overview
+## What It Does
 
+Instead of relying on the language model's general knowledge, this system retrieves relevant chunks from the actual speech before generating answers. This grounds responses in the source material and lets you verify answers against the original text.
 
+## Tech Stack
 
-The system demonstrates a practical implementation of RAG technology, combining vector search with local language models to provide accurate, context-grounded answers. Unlike traditional chatbots that might hallucinate information, this system strictly answers based only on the provided source text.
+- **Python 3.8+** - Core programming language
+- **LangChain with LCEL** - For building the RAG pipeline
+- **Ollama (Mistral model)** - Local LLM running on your machine
+- **ChromaDB** - Vector database for storing embeddings
+- **sentence-transformers (all-MiniLM-L6-v2)** - For converting text to embeddings
+- **PyTorch** - Backend for running the embedding model
 
-## Technical Architecture
+## How It Works
 
-### Core Technologies
+The system uses a straightforward RAG approach:
 
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Language** | Python 3.8+ | Core programming environment |
-| **Framework** | LangChain with LCEL | RAG pipeline orchestration |
-| **LLM** | Ollama (Mistral) | Local language model inference |
-| **Vector Store** | ChromaDB | Persistent embedding storage |
-| **Embeddings** | all-MiniLM-L6-v2 | Semantic text vectorization |
-| **ML Backend** | PyTorch | Model inference engine |
-| **Validation** | Pydantic | Data schema validation |
+1. **Document Processing**: The speech text gets split into chunks of 500 characters with 50 characters overlap. This overlap prevents important information from being cut off at boundaries.
 
-### System Design Decisions
+2. **Embedding Creation**: Each chunk is converted into a 384-dimensional vector using the sentence-transformer model. These vectors capture the semantic meaning of the text.
 
-The implementation follows several key design principles that were carefully chosen to ensure reliability, performance, and maintainability:
+3. **Storage**: All vectors are stored in ChromaDB, which uses SQLite under the hood for persistence. This means you only need to process the document once.
 
-#### 1. Retrieval-Augmented Generation (RAG) Approach
+4. **Query Processing**: When you ask a question:
+   - Your question gets converted to a vector
+   - The system finds the 4 most similar chunks from the database
+   - These chunks are sent to the Mistral LLM along with your question
+   - The LLM generates an answer based only on those chunks
 
-Rather than relying solely on the language model's pre-trained knowledge, this system implements RAG to ground all responses in the actual source text.
+5. **Constrained Responses**: The prompt explicitly tells the model to only use the provided context. If the answer isn't in the retrieved chunks, it says so instead of making things up.
 
-```
-User Query → Vectorize → Retrieve Top-K Chunks → LLM Generation → Answer + Sources
-                ↓              ↑
-           Embedding      Vector Database
-             Model          (ChromaDB)
-```
+## Why These Choices?
 
-This approach provides several advantages:
+**Chunk size (500 chars)**: I tested different sizes. Smaller chunks gave more precise retrieval but sometimes lacked context. Larger chunks had the opposite problem. 500 worked well for this speech.
 
-- Prevents hallucination by constraining responses to retrieved context
-- Enables citation of source material for verification
-- Allows dynamic knowledge base updates without model retraining
-- Reduces computational requirements compared to fine-tuning
+**Retrieval count (k=4)**: Retrieves enough context for comprehensive answers without overwhelming the LLM's context window or slowing down responses.
 
-#### 2. Document Processing Strategy
+**Local LLM**: Using Ollama means everything runs on your machine. No API costs, no privacy concerns, and it works offline.
 
-The text processing pipeline uses a RecursiveCharacterTextSplitter with carefully tuned parameters:
+**ChromaDB**: Lightweight, easy to set up, and handles persistence automatically. No need for a separate database server.
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| **Chunk Size** | 500 chars | Balances context preservation with retrieval precision |
-| **Chunk Overlap** | 50 chars | Prevents information loss at chunk boundaries |
-| **Separators** | `[". ", "\n\n", "\n", " "]` | Prioritizes natural text boundaries for semantic coherence |
-
-#### 3. Embedding and Retrieval Configuration
-
-The embedding model (all-MiniLM-L6-v2) was selected for its balance of performance and resource efficiency:
-
-| Specification | Value | Benefit |
-|--------------|-------|---------|
-| **Vector Dimensions** | 384 | Optimal balance of accuracy and speed |
-| **Normalization** | L2-normalized | Consistent similarity scoring |
-| **Hardware** | CPU-optimized | Flexible deployment without GPU |
-| **Retrieval Count** | k=4 | Sufficient context without overwhelming LLM |
-
-The retrieval count of 4 was chosen to provide sufficient context for comprehensive answers without overwhelming the language model's context window.
-
-#### 4. Vector Store Implementation
-
-ChromaDB was chosen for its lightweight design and persistent storage capabilities:
-
-- Automatic persistence to disk eliminates the need for manual serialization
-- SQLite-backed storage ensures ACID compliance
-- Efficient similarity search with HNSW indexing
-- Minimal memory footprint suitable for resource-constrained environments
-
-The implementation manually instantiates the ChromaDB PersistentClient with explicit settings to ensure telemetry is disabled and configurations are deterministic across runs.
-
-#### 5. Prompt Engineering
-
-The QA chain uses a carefully crafted prompt template that enforces strict adherence to source material:
-
-```
-You are a helpful assistant answering questions only from Dr. B.R. Ambedkar's speech.
-Use ONLY the context provided below.
-If the answer is not found in the context, you MUST reply:
-"I cannot find this information in the provided text."
-```
-
-This instruction pattern:
-- Explicitly restricts the model to provided context
-- Defines expected behavior for out-of-scope queries
-- Reduces hallucination risk through clear constraints
-- Provides consistent behavior across different query types
-
-#### 6. Error Handling and Robustness
-
-The system implements comprehensive error handling at every stage:
-
-- **Connection Validation:** Checks Ollama server availability before initialization
-- **File Existence Verification:** Validates source file presence before processing
-- **Graceful Degradation:** Catches and reports errors without crashing
-- **Clean Shutdown:** Properly closes resources on exit or interruption
-
-A custom stderr filtering mechanism suppresses non-critical telemetry warnings while preserving important error messages, ensuring clean output for production use.
-
-#### 7. Code Organization and Maintainability
-
-The codebase follows software engineering best practices:
-
-- **Configuration Class:** Centralizes all settings in a single Config class for easy modification
-- **DRY Principle:** Reusable functions for embedding model creation and common operations
-- **Separation of Concerns:** Distinct functions for loading, splitting, storing, and retrieving
-- **Type Safety:** Proper exception handling and error propagation
-- **Documentation:** Clear docstrings explaining function purposes and behaviors
-
-## Installation and Setup
+## Setup
 
 ### Prerequisites
 
-```
-Required: Python 3.8+ | Ollama | Mistral Model
-```
+You need Python 3.8 or higher and Ollama installed on your system.
 
-Before beginning installation, ensure your system meets these requirements:
+**Install Ollama:**
 
-**1. Python Version**
-
-Python 3.8 or higher must be installed on your system. Verify with:
-
-```bash
-python --version
-```
-
-**2. Ollama Installation**
-
-Download and install Ollama from [ollama.ai](https://ollama.ai/). Ollama provides a local inference server for running large language models.
-
-**3. Mistral Model**
-
-After installing Ollama, pull the Mistral model:
+Download from [ollama.ai](https://ollama.ai/) and install it. Then pull the Mistral model:
 
 ```bash
 ollama pull mistral
 ```
 
-This downloads the model weights locally. The first download may take several minutes depending on your internet connection.
+The Ollama service should be running on localhost:11434.
 
-**4. Verify Ollama Service**
+### Installation
 
-Start the Ollama service (runs on localhost:11434). Test connectivity:
-
-```bash
-curl http://localhost:11434/api/tags
-```
-
-### Project Installation
-
-```
-Steps: Clone → Virtual Env → Install Dependencies → Verify Files
-```
-
-**1. Clone the Repository:**
+1. **Clone the repository:**
    ```bash
    git clone <repository-url>
    cd AmbedkarGPT-Intern-Task
    ```
 
-2. **Create Virtual Environment:**
-   
-   Creating a virtual environment isolates project dependencies from system Python packages:
+2. **Create a virtual environment:**
    
    On Linux/Mac:
    ```bash
@@ -189,106 +81,55 @@ Steps: Clone → Virtual Env → Install Dependencies → Verify Files
    .\venv\Scripts\activate
    ```
 
-3. **Install Dependencies:**
-   
-   The requirements.txt file contains all necessary packages with pinned versions for reproducibility:
+3. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
-   
-   This installs:
-   - LangChain core libraries for RAG pipeline construction
-   - ChromaDB for vector storage
-   - Sentence-transformers for text embeddings
-   - Ollama Python client for LLM interaction
-   - PyTorch for model inference
-   - Supporting utilities for text processing
 
-4. **Verify Installation:**
-   
-   Ensure the speech.txt file containing Dr. Ambedkar's text is present in the project root directory. This file should have been provided with the assignment materials.
+4. **Make sure speech.txt is in the project folder** - this contains Dr. Ambedkar's speech text.
 
 ## Running the Application
 
-### First Run
-
-When you run the application for the first time:
+Start the application:
 
 ```bash
 python main.py
 ```
 
-The system will perform the following initialization sequence:
+**First run takes about 2-3 minutes** because it needs to:
+- Load the embedding model
+- Process and chunk the speech text
+- Generate embeddings for all chunks
+- Create the ChromaDB vector database
+
+**Subsequent runs start in 10-20 seconds** since it just loads the existing database.
+
+### Using the System
+
+Once it's ready, you'll see:
 
 ```
-[1] Environment Validation
-    └─ Check Python version & imports
-
-[2] Ollama Connection Test
-    └─ Verify server accessibility
-
-[3] Embedding Model Loading
-    └─ Initialize sentence-transformer
-
-[4] Document Processing
-    ├─ Read speech.txt
-    ├─ Split into chunks (500 chars, 50 overlap)
-    └─ Generate embeddings
-
-[5] Vector Store Creation
-    ├─ Create chroma_db_prod/
-    ├─ Store embeddings in ChromaDB
-    └─ Persist to disk
-
-[6] QA Chain Initialization
-    └─ Setup retrieval pipeline
-
-Duration: ~2-3 minutes (hardware dependent)
-```
-
-### Subsequent Runs
-
-| Run Type | Startup Time | Operations |
-|----------|-------------|------------|
-| First Run | 2-3 minutes | Full initialization + embedding generation |
-| Subsequent | 10-20 seconds | Load existing vector database |
-
-On subsequent executions, the system detects the existing vector database and loads it directly, bypassing the document processing stage.
-
-### Asking Questions
-
-Once initialized, you will see the prompt:
-
-```
-System ready! Ask questions below.
-Commands: 'exit', 'quit', 'q'
+System ready. Enter your questions below.
+Type 'exit', 'quit', or 'q' to terminate
 
 > 
 ```
 
-Enter your question and press Enter. The system will:
-1. Vectorize your query
-2. Retrieve relevant text chunks from the database
-3. Send chunks and query to the LLM
-4. Display the generated answer
-5. Show source snippets for verification
+Type your question and hit Enter. The system will show you the answer along with source excerpts from the speech.
 
-### Example Interactions
-
-**Example 1: Question within scope**
+**Example:**
 
 ```
 > What is the real remedy?
 
-Answer: According to the text, the real remedy is to destroy the caste 
-system and promote social equality...
+Answer: According to the text, the real remedy is to destroy the caste system...
 
 Source excerpts:
   1. ...the real remedy is to destroy the caste system...
   2. ...nothing else will serve as an effective solution...
 ```
 
-**Example 2: Question outside scope**
+If you ask something that's not in the speech, it will tell you:
 
 ```
 > What are Dr. Ambedkar's views on modern technology?
@@ -296,82 +137,55 @@ Source excerpts:
 Answer: I cannot find this information in the provided text.
 ```
 
-**Exit Commands:** Type `exit`, `quit`, or `q` to terminate | Press `Ctrl+C` for immediate shutdown
+To exit, type `exit`, `quit`, or `q`, or just press Ctrl+C.
 
-## Technical Implementation Details
+## Technical Implementation
 
-### File Structure
+### Project Structure
 
 ```
 AmbedkarGPT-Intern-Task/
-├── main.py                  # Main application code
-├── requirements.txt         # Python dependencies
-├── speech.txt              # Source document
-├── README.md               # This file
-
+├── main.py              # Main application code
+├── requirements.txt     # Python dependencies
+├── speech.txt          # Source document (Dr. Ambedkar's speech)
+└── README.md           # This file
 ```
 
-### Key Components
+After the first run, a `chroma_db_prod/` folder gets created automatically. This contains the vector database that persists between runs.
 
-| Component | Purpose | Key Feature |
-|-----------|---------|-------------|
-| **StderrFilter** | Error stream wrapper | Filters ChromaDB telemetry warnings |
-| **AppConfig** | Configuration hub | Centralizes all system parameters |
-| **initialize_embeddings()** | Embedding factory | Creates HuggingFace model instance |
-| **verify_ollama_connection()** | Health check | Validates Ollama server availability |
-| **process_document()** | Document processor | Loads and chunks text with UTF-8 encoding |
-| **get_chroma_client()** | Database factory | Creates ChromaDB client with telemetry disabled |
-| **initialize_vector_store()** | Vector DB manager | Creates or loads existing vector database |
-| **build_qa_pipeline()** | LCEL chain builder | Constructs retrieval → prompt → LLM pipeline |
+### Code Overview
 
-**Component Interactions:**
+The main.py file has several key functions:
 
-```
-[main] → [verify_ollama_connection] → [initialize_embeddings]
-   ↓
-[process_document] → [get_chroma_client] → [initialize_vector_store]
-   ↓
-[build_qa_pipeline] → Interactive Q&A Loop
-```
+- `initialize_embeddings()` - Sets up the sentence-transformer model
+- `verify_ollama_connection()` - Checks if Ollama server is running
+- `process_document()` - Loads and splits the speech text into chunks
+- `get_chroma_client()` - Creates the ChromaDB client with telemetry disabled
+- `initialize_vector_store()` - Creates or loads the vector database
+- `build_qa_pipeline()` - Sets up the retrieval chain using LCEL
+- `main()` - Runs everything and handles the interactive Q&A loop
 
-**main() Function:**
-Orchestrates the entire application flow with proper error handling at each stage. Implements the interactive loop for user queries.
+All configuration settings are in the `AppConfig` class at the top of main.py.
 
-### Configuration Tuning
+### Configuration
 
-**Available Parameters in AppConfig:**
+If you want to tune the system, you can modify these parameters in the `AppConfig` class:
 
-| Parameter | Default | Effect of Increase | Effect of Decrease |
-|-----------|---------|-------------------|-------------------|
-| `CHUNK_SIZE` | 500 | More context per chunk | More precise retrieval |
-| `CHUNK_OVERLAP` | 50 | Reduces boundary effects | Reduces redundancy |
-| `RETRIEVAL_COUNT` | 4 | More context (slower) | Faster but less context |
+- `CHUNK_SIZE` (default: 500) - Size of each text chunk
+- `CHUNK_OVERLAP` (default: 50) - Overlap between chunks
+- `RETRIEVAL_COUNT` (default: 4) - Number of chunks to retrieve per query
 
-**Model Selection:**
+You can also change the LLM model by modifying the model name in the `build_qa_pipeline()` function. Just make sure you've pulled that model with Ollama first.
+## Known Issues
 
-```python
-# Change LLM model (in build_qa_pipeline function)
-llm = ChatOllama(model="llama2")  # or "codellama", "mixtral", etc.
+ChromaDB's telemetry can be noisy in the console. I added a custom stderr filter to suppress those warnings while keeping actual errors visible. This doesn't affect functionality, just keeps the output clean.
 
-# Change embedding model (in initialize_embeddings function)
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-)
-```
+## What Could Be Better
 
+Given more time, I'd add:
 
-## Design Rationale Summary
-
-This implementation prioritizes:
-
-1. **Accuracy over speed:** Multiple retrieval chunks and explicit prompt constraints ensure correct answers
-2. **Reproducibility:** Pinned dependency versions and fixed random seeds ensure consistent behavior
-3. **Privacy:** Complete offline operation with no external API calls or telemetry
-4. **Maintainability:** Clean code structure with clear separation of concerns
-5. **Production readiness:** Comprehensive error handling and graceful degradation
-6. **Resource efficiency:** Optimized for CPU-only environments without requiring GPU acceleration
-
-
-## Conclusion
-
-This project demonstrates a complete end-to-end implementation of a RAG-based question answering system following industry best practices. The architecture balances accuracy, performance, and maintainability while remaining accessible for deployment in resource-constrained environments. All design decisions are driven by practical considerations and documented for transparency.    
+- **Hybrid search** - combining semantic similarity with keyword-based BM25 for better retrieval
+- **Query caching** - storing answers to common questions
+- **Web interface** - a simple Flask or FastAPI UI instead of command line
+- **Reranking** - using a cross-encoder to improve which chunks get sent to the LLM
+- **Better evaluation** - automated testing with ground truth Q&A pairs to measure accuracy    
