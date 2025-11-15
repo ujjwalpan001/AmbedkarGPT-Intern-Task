@@ -3,7 +3,7 @@
 
 ## Project Overview
 
-This is a production-ready question-answering system built for the Kalpit Pvt Ltd AI Intern assignment. The system implements a complete Retrieval-Augmented Generation (RAG) pipeline to answer questions exclusively from Dr. B.R. Ambedkar's speech text. The architecture is designed to run entirely offline without requiring API keys or external services, making it suitable for environments with strict data privacy requirements.
+
 
 ## Technical Architecture
 
