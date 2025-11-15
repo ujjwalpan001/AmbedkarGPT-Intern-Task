@@ -179,13 +179,3 @@ You can also change the LLM model by modifying the model name in the `build_qa_p
 ## Known Issues
 
 ChromaDB's telemetry can be noisy in the console. I added a custom stderr filter to suppress those warnings while keeping actual errors visible. This doesn't affect functionality, just keeps the output clean.
-
-## What Could Be Better
-
-Given more time, I'd add:
-
-- **Hybrid search** - combining semantic similarity with keyword-based BM25 for better retrieval
-- **Query caching** - storing answers to common questions
-- **Web interface** - a simple Flask or FastAPI UI instead of command line
-- **Reranking** - using a cross-encoder to improve which chunks get sent to the LLM
-- **Better evaluation** - automated testing with ground truth Q&A pairs to measure accuracy    
